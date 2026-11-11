@@ -1,5 +1,6 @@
 # Multi-stage Dockerfile for LexiPath Next.js
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
+RUN apk add --no-cache ca-certificates
 
 # Install dependencies only when needed
 FROM base AS deps

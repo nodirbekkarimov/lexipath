@@ -47,27 +47,27 @@ function LoginForm() {
           </div>
         )}
 
-        {/* 1-Click Fast Demo Login */}
-        <div className="mb-6 p-4 bg-[#DCE9DF]/50 border border-[#315C4A]/20 rounded-xl space-y-2">
+        {/* 1-Click Fast Admin Login */}
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#315C4A] flex items-center gap-1.5">
-              <Sparkles size={14} /> Tezkor ko'rish
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+              <span>👑 Admin Portali</span>
             </span>
-            <span className="text-[11px] font-medium text-[#18231F]/50">Parol shart emas</span>
+            <span className="text-[11px] font-medium text-amber-700/80">Boshqaruv paneli</span>
           </div>
           <form action={quickDemoLoginAction}>
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#315C4A] hover:bg-[#18231F] text-white text-sm font-semibold rounded-lg transition-all shadow-xs"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-all shadow-xs"
             >
-              <span>🚀 1-Klikda Kirish (Nodir Karimov)</span>
+              <span>👑 Admin sifatida kirish (Nodir Karimov)</span>
             </button>
           </form>
         </div>
 
         <div className="my-5 flex items-center gap-3">
           <div className="flex-1 h-px bg-[#18231F]/10" />
-          <span className="text-xs text-[#18231F]/35 font-medium">yoki email orqali</span>
+          <span className="text-xs text-[#18231F]/45 font-medium">yoki foydalanuvchi hisobi bilan</span>
           <div className="flex-1 h-px bg-[#18231F]/10" />
         </div>
 
@@ -84,7 +84,6 @@ function LoginForm() {
               type="email"
               autoComplete="email"
               required
-              defaultValue="nodir.karimov@lexipath.uz"
               placeholder="you@example.com"
               className="w-full px-3.5 py-2.5 text-sm text-[#18231F] bg-[#F7F6F0] border border-[#18231F]/15 rounded-lg placeholder-[#18231F]/30 focus:outline-none focus:ring-2 focus:ring-[#315C4A]/30 focus:border-[#315C4A] transition-colors"
             />

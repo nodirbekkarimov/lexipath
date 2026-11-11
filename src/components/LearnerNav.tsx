@@ -15,7 +15,8 @@ import {
   Flame,
   Target,
   Menu,
-  X
+  X,
+  ShieldCheck
 } from 'lucide-react';
 import { CURRENT_LEARNER } from '@/data/mock-data';
 import { useLexiPathStore } from '@/lib/data-store';
@@ -106,6 +107,17 @@ export function LearnerNav() {
 
           {/* Desktop Right Status: Streak & Profile */}
           <div className="hidden sm:flex items-center space-x-3">
+            {/* Admin Panel Button if super_admin or admin */}
+            {(learner.role === 'super_admin' || learner.role === 'admin' || learner.email?.includes('nodir')) && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#315C4A] hover:bg-[#18231F] text-white font-bold text-xs shadow-xs transition"
+              >
+                <ShieldCheck size={14} className="text-amber-300" />
+                <span>Admin Panel</span>
+              </Link>
+            )}
+
             {/* Study Streak */}
             <div className="flex items-center space-x-1.5 text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full text-xs font-medium">
               <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
@@ -118,23 +130,40 @@ export function LearnerNav() {
               <span>Band {learner.targetBand} Target</span>
             </div>
 
-            {/* User Profile Mini */}
-            <Link
-              href="/settings"
-              className="flex items-center space-x-2 pl-2 border-l border-ivory-200 hover:opacity-85 transition"
-            >
-              <div className="w-7 h-7 rounded-full bg-forest-100 text-forest-800 border border-forest-200 flex items-center justify-center text-xs font-semibold">
-                {learner.fullName.slice(0, 2).toUpperCase()}
+            {/* User Profile Mini or Login / Register */}
+            {learner.email === 'learner@lexipath.uz' ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-ivory-200">
+                <Link
+                  href="/login"
+                  className="px-2.5 py-1 text-xs font-semibold text-[#18231F] hover:text-[#315C4A] transition"
+                >
+                  Kirish
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-3 py-1 bg-[#315C4A] hover:bg-[#18231F] text-white text-xs font-semibold rounded-lg shadow-xs transition"
+                >
+                  Ro'yxatdan o'tish
+                </Link>
               </div>
-              <div className="hidden md:flex flex-col text-left">
-                <span className="text-xs font-semibold text-ink-900 leading-tight">
-                  {learner.fullName}
-                </span>
-                <span className="text-[10px] text-ink-500">
-                  Uzbek Learner
-                </span>
-              </div>
-            </Link>
+            ) : (
+              <Link
+                href="/settings"
+                className="flex items-center space-x-2 pl-2 border-l border-ivory-200 hover:opacity-85 transition"
+              >
+                <div className="w-7 h-7 rounded-full bg-forest-100 text-forest-800 border border-forest-200 flex items-center justify-center text-xs font-semibold">
+                  {learner.fullName.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="hidden md:flex flex-col text-left">
+                  <span className="text-xs font-semibold text-ink-900 leading-tight">
+                    {learner.fullName}
+                  </span>
+                  <span className="text-[10px] text-ink-500">
+                    {learner.role === 'super_admin' ? 'Super Admin' : 'Talaba'}
+                  </span>
+                </div>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -165,6 +194,17 @@ export function LearnerNav() {
               </div>
             </div>
           </div>
+
+          {(learner.role === 'super_admin' || learner.role === 'admin' || learner.email?.includes('nodir')) && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 p-2.5 mb-2 rounded-lg bg-[#315C4A] text-white font-bold text-xs"
+            >
+              <ShieldCheck size={16} className="text-amber-300" />
+              <span>👑 Admin Boshqaruv Paneli</span>
+            </Link>
+          )}
 
           <div className="grid grid-cols-2 gap-1">
             {learnerNavItems.map((item) => {

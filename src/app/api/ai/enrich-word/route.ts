@@ -7,7 +7,13 @@ import {
   ParaphraseItem 
 } from '@/lib/dictionary/academic-lexicon';
 import { lookupParaphrase } from '@/lib/dictionary/ielts-paraphraser';
+import { getAccurateUzbekTranslation } from '@/lib/dictionary/uzbek-translator';
 import { PartOfSpeech } from '@/types/database';
+
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,13 +72,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: result, source: 'lexicon_db' });
     }
 
-    // 2. Fetch from Dictionary API for real phonetics, audio, definitions
+    // 2. Fetch from Dictionary API with proper browser headers
     let dictData: any = null;
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500);
+      const timer = setTimeout(() => controller.abort(), 6000);
       const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lemma)}`, {
         signal: controller.signal,
+        headers: BROWSER_HEADERS,
       });
       clearTimeout(timer);
 
@@ -83,7 +90,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch (err) {
-      // Dictionary API timeout or offline — graceful fallback continues
+      // Dictionary API offline — fallback continues
     }
 
     // Extract pronunciation & audio
@@ -129,65 +136,25 @@ export async function POST(req: NextRequest) {
     }
 
     if (!definitionEn) {
-      definitionEn = `A formal expression denoting ${lemma}.`;
+      definitionEn = `A formal academic expression denoting ${lemma}.`;
     }
 
     if (!exampleSentence) {
-      exampleSentence = `Recent investigations examine how ${lemma} influences outcomes.`;
+      exampleSentence = `Recent academic investigations examine how ${lemma} influences broader outcomes.`;
     }
 
     // 3. Classify CEFR & IELTS Level
     const { cefrLevel, ieltsBand } = classifyWordLevel(lemma, detectedPos);
 
-    // 4. Real Uzbek Translation: Google Translate (Fast) + MyMemory Fallback
-    let translationUz = '';
+    // 4. Bulletproof Uzbek Translation Service (Offline DB + Multi-Engine)
+    let translationUz = await getAccurateUzbekTranslation(lemma);
 
-    // Primary: Google Translate (Free fast endpoint, <400ms)
-    try {
-      const gtController = new AbortController();
-      const gtTimer = setTimeout(() => gtController.abort(), 3500);
-      const gtRes = await fetch(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=uz&dt=t&q=${encodeURIComponent(lemma)}`,
-        { signal: gtController.signal }
-      );
-      clearTimeout(gtTimer);
-      if (gtRes.ok) {
-        const gtData = await gtRes.json();
-        if (Array.isArray(gtData) && Array.isArray(gtData[0])) {
-          const combined = gtData[0].map((item: any) => item[0]).filter(Boolean).join('');
-          if (combined && combined.trim().toLowerCase() !== lemma.toLowerCase()) {
-            translationUz = combined.trim();
-          }
-        }
-      }
-    } catch {}
-
-    // Secondary: MyMemory API Fallback
+    // If still empty (extremely rare), use descriptive POS label
     if (!translationUz) {
-      try {
-        const mmController = new AbortController();
-        const mmTimer = setTimeout(() => mmController.abort(), 3500);
-        const mmRes = await fetch(
-          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(lemma)}&langpair=en|uz`,
-          { signal: mmController.signal }
-        );
-        clearTimeout(mmTimer);
-        if (mmRes.ok) {
-          const mmData = await mmRes.json();
-          const translated = mmData?.responseData?.translatedText || '';
-          if (translated && translated.toLowerCase() !== lemma.toLowerCase() && !translated.includes('MYMEMORY')) {
-            translationUz = translated.trim();
-          }
-        }
-      } catch {}
-    }
-
-    // Tertiary: Fallback if offline
-    if (!translationUz) {
-      if (detectedPos === 'adjective') translationUz = `${lemma} (sifat)`;
-      else if (detectedPos === 'verb') translationUz = `${lemma} (fe'l)`;
-      else if (detectedPos === 'adverb') translationUz = `${lemma} (ravish)`;
-      else translationUz = `${lemma} (ot)`;
+      if (detectedPos === 'adjective') translationUz = `${lemma} (sifat ma'nosida)`;
+      else if (detectedPos === 'verb') translationUz = `${lemma} qilmoq (fe'l)`;
+      else if (detectedPos === 'adverb') translationUz = `${lemma} tarzda (ravish)`;
+      else translationUz = `${lemma} (ot ma'nosida)`;
     }
 
     // 5. Academic collocations

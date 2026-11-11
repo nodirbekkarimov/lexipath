@@ -39,7 +39,7 @@ export default function LearnerDashboard() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 border-b border-[#18231F]/10 pb-6">
         <div>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-[#18231F]">
-            Salom, {store.learner.fullName.split(' ')[0]}
+            {store.learner.email === 'learner@lexipath.uz' ? 'Xush kelibsiz!' : `Salom, ${store.learner.fullName.split(' ')[0]}`}
           </h1>
           <p className="text-sm text-[#18231F]/70 mt-1">
             Maqsad: <strong className="text-[#315C4A] font-semibold">IELTS Band {store.learner.targetBand}</strong> — SM-2 spaced repetition va haqiqiy reading konteksti bilan.

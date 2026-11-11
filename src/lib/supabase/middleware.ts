@@ -68,22 +68,19 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set('redirectTo', pathname)
       return NextResponse.redirect(url)
     }
-  }
 
-  // Auto-provision demo session cookie on learner routes if none exists
-  if (!isAuthenticated && !isAuthPath && !pathname.startsWith('/api/')) {
-    supabaseResponse.cookies.set(
-      'lexipath_session',
-      JSON.stringify({
-        email: 'nodir.karimov@lexipath.uz',
-        fullName: 'Nodir Karimov',
-        role: 'super_admin',
-      }),
-      {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      }
-    )
+    // Verify admin role if session exists
+    if (localSession) {
+      try {
+        const parsed = JSON.parse(localSession)
+        if (parsed.role !== 'super_admin' && parsed.role !== 'admin') {
+          const url = request.nextUrl.clone()
+          url.pathname = '/login'
+          url.searchParams.set('error', 'admin_access_required')
+          return NextResponse.redirect(url)
+        }
+      } catch {}
+    }
   }
 
   return supabaseResponse

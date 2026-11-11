@@ -168,6 +168,24 @@ export function LexiPathProvider({ children }: { children: React.ReactNode }) {
         if (parsed.readPassageIds) setReadPassageIds(parsed.readPassageIds);
         if (parsed.quizAttempts) setQuizAttempts(parsed.quizAttempts);
       }
+
+      // Check active session cookie from login/register
+      if (typeof document !== 'undefined') {
+        const match = document.cookie.match(/lexipath_session=([^;]+)/);
+        if (match) {
+          try {
+            const session = JSON.parse(decodeURIComponent(match[1]));
+            if (session?.fullName) {
+              setLearner((prev) => ({
+                ...prev,
+                fullName: session.fullName,
+                email: session.email || prev.email,
+                role: session.role || prev.role,
+              }));
+            }
+          } catch {}
+        }
+      }
     } catch (e) {
       console.warn('Failed to hydrate LexiPath local storage:', e);
     } finally {

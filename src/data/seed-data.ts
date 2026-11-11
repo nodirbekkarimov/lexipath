@@ -12,20 +12,38 @@ import {
 } from '../types/database';
 
 export const SEED_LEARNER: Profile = {
-  id: 'usr-9281',
+  id: 'usr-guest-01',
+  email: 'learner@lexipath.uz',
+  fullName: 'Yangi Foydalanuvchi',
+  role: 'learner',
+  targetBand: 7.5,
+  targetExamDate: '2026-12-30',
+  dailyGoalWords: 10,
+  wordsLearnedToday: 0,
+  wordsLearnedCount: 24,
+  totalStudyMinutes: 120,
+  nativeLanguage: 'uz',
+  streakDays: 1,
+  createdAt: '2026-11-01T10:00:00Z',
+  lastActiveAt: '2026-11-11T10:00:00Z',
+  status: 'active',
+};
+
+export const ADMIN_USER: Profile = {
+  id: 'usr-admin-nodir',
   email: 'nodir.karimov@lexipath.uz',
   fullName: 'Nodir Karimov',
   role: 'super_admin',
-  targetBand: 7.5,
-  targetExamDate: '2026-12-15',
-  dailyGoalWords: 10,
-  wordsLearnedToday: 4,
-  wordsLearnedCount: 142,
-  totalStudyMinutes: 620,
+  targetBand: 8.5,
+  targetExamDate: '2026-12-30',
+  dailyGoalWords: 20,
+  wordsLearnedToday: 8,
+  wordsLearnedCount: 320,
+  totalStudyMinutes: 1450,
   nativeLanguage: 'uz',
-  streakDays: 9,
+  streakDays: 14,
   createdAt: '2026-09-01T10:00:00Z',
-  lastActiveAt: '2026-10-29T20:15:00Z',
+  lastActiveAt: '2026-11-11T12:00:00Z',
   status: 'active',
 };
 

@@ -158,7 +158,7 @@ export async function quickDemoLoginAction(): Promise<void> {
     }
   )
 
-  redirect('/dashboard')
+  redirect('/admin')
 }
 
 // ─── Logout ───────────────────────────────────────────────────────────────
