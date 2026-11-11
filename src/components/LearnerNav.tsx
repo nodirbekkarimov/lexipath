@@ -193,6 +193,25 @@ export function LearnerNav() {
                 <div className="text-[10px] text-ink-500">Band {learner.targetBand} • {learner.streakDays}d Streak</div>
               </div>
             </div>
+
+            {learner.email === 'learner@lexipath.uz' && (
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-2 py-1 text-xs font-semibold text-[#18231F] border border-ivory-300 rounded"
+                >
+                  Kirish
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-2.5 py-1 bg-[#315C4A] text-white text-xs font-semibold rounded"
+                >
+                  Ro'yxatdan o'tish
+                </Link>
+              </div>
+            )}
           </div>
 
           {(learner.role === 'super_admin' || learner.role === 'admin' || learner.email?.includes('nodir')) && (

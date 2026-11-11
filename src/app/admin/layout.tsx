@@ -63,6 +63,11 @@ export default function AdminLayout({
     return pathname.startsWith(href);
   };
 
+  // Dedicated Secret Admin Login portal does not render admin layout
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-ivory-100 flex flex-col md:flex-row text-ink-950 font-sans">
       

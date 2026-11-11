@@ -149,14 +149,6 @@ export async function POST(req: NextRequest) {
     // 4. Bulletproof Uzbek Translation Service (Offline DB + Multi-Engine)
     let translationUz = await getAccurateUzbekTranslation(lemma);
 
-    // If still empty (extremely rare), use descriptive POS label
-    if (!translationUz) {
-      if (detectedPos === 'adjective') translationUz = `${lemma} (sifat ma'nosida)`;
-      else if (detectedPos === 'verb') translationUz = `${lemma} qilmoq (fe'l)`;
-      else if (detectedPos === 'adverb') translationUz = `${lemma} tarzda (ravish)`;
-      else translationUz = `${lemma} (ot ma'nosida)`;
-    }
-
     // 5. Academic collocations
     const collocations = [
       `significant ${lemma}`,

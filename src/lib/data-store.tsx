@@ -180,10 +180,23 @@ export function LexiPathProvider({ children }: { children: React.ReactNode }) {
                 ...prev,
                 fullName: session.fullName,
                 email: session.email || prev.email,
-                role: session.role || prev.role,
+                role: session.role || 'learner',
               }));
             }
           } catch {}
+        } else {
+          // If no active session cookie exists, ensure clean guest state (not admin)
+          setLearner((prev) => {
+            if (prev.role === 'super_admin' || prev.fullName === 'Nodir Karimov') {
+              return {
+                ...SEED_LEARNER,
+                fullName: 'Mehmon Foydalanuvchi',
+                email: 'learner@lexipath.uz',
+                role: 'learner',
+              };
+            }
+            return prev;
+          });
         }
       }
     } catch (e) {

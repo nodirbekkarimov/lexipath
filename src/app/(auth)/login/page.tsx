@@ -3,7 +3,7 @@
 import { Suspense, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { loginAction, quickDemoLoginAction, type ActionResult } from '@/lib/actions/auth'
+import { loginAction, type ActionResult } from '@/lib/actions/auth'
 import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react'
 
 function LoginForm() {
@@ -47,30 +47,6 @@ function LoginForm() {
           </div>
         )}
 
-        {/* 1-Click Fast Admin Login */}
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
-              <span>👑 Admin Portali</span>
-            </span>
-            <span className="text-[11px] font-medium text-amber-700/80">Boshqaruv paneli</span>
-          </div>
-          <form action={quickDemoLoginAction}>
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-all shadow-xs"
-            >
-              <span>👑 Admin sifatida kirish (Nodir Karimov)</span>
-            </button>
-          </form>
-        </div>
-
-        <div className="my-5 flex items-center gap-3">
-          <div className="flex-1 h-px bg-[#18231F]/10" />
-          <span className="text-xs text-[#18231F]/45 font-medium">yoki foydalanuvchi hisobi bilan</span>
-          <div className="flex-1 h-px bg-[#18231F]/10" />
-        </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
@@ -109,7 +85,6 @@ function LoginForm() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                defaultValue="Password123!"
                 placeholder="••••••••"
                 className="w-full px-3.5 py-2.5 pr-10 text-sm text-[#18231F] bg-[#F7F6F0] border border-[#18231F]/15 rounded-lg placeholder-[#18231F]/30 focus:outline-none focus:ring-2 focus:ring-[#315C4A]/30 focus:border-[#315C4A] transition-colors"
               />

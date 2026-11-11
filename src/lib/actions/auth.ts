@@ -60,23 +60,17 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
       },
     })
     const timeoutPromise = new Promise<any>((resolve) =>
       setTimeout(() => resolve({ error: { message: 'timeout' } }), 600)
     )
-    const { error } = await Promise.race([signUpPromise, timeoutPromise])
-
-    if (!error) {
-      return { success: true }
-    }
+    await Promise.race([signUpPromise, timeoutPromise])
   } catch (err: any) {
     if (err?.message === 'NEXT_REDIRECT') throw err
-    // Supabase offline/paused fallback
   }
 
-  // Graceful local session
+  // Set session cookie immediately so user is logged in
   const cookieStore = await cookies()
   cookieStore.set('lexipath_session', JSON.stringify({ email, fullName, role: 'learner' }), {
     path: '/',
@@ -141,10 +135,23 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   redirect('/dashboard')
 }
 
-// ─── Demo / Quick Login ────────────────────────────────────────────────────
+// ─── Secret Admin Gateway Login ─────────────────────────────────────────────
 
-export async function quickDemoLoginAction(): Promise<void> {
-  const cookieStore = await cookies()
+export async function adminLoginAction(formData: FormData): Promise<ActionResult> {
+  const secretKey = (formData.get('secretKey') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim()?.toLowerCase();
+
+  // Secure master key known only to Nodir Karimov
+  const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || 'NodirAdmin2026!';
+
+  if (secretKey !== ADMIN_SECRET || !email.includes('nodir')) {
+    return {
+      success: false,
+      error: "Xavfsizlik xatosi: Maxfiy kalit yoki admin emaili noto'g'ri. Ruxsat rad etildi.",
+    };
+  }
+
+  const cookieStore = await cookies();
   cookieStore.set(
     'lexipath_session',
     JSON.stringify({
@@ -156,9 +163,9 @@ export async function quickDemoLoginAction(): Promise<void> {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     }
-  )
+  );
 
-  redirect('/admin')
+  redirect('/admin');
 }
 
 // ─── Logout ───────────────────────────────────────────────────────────────

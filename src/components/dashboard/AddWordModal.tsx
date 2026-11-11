@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SpeakButton } from '@/components/ui/SpeakButton';
 import { useLexiPathStore } from '@/lib/data-store';
 import { CEFRLevel, PartOfSpeech } from '@/types/database';
-import { Sparkles, Loader2, Check, ChevronDown, ChevronUp, BookOpen, Volume2 } from 'lucide-react';
+import { Sparkles, Loader2, Check, ChevronDown, ChevronUp, BookOpen, Volume2, RefreshCw } from 'lucide-react';
 
 interface AddWordModalProps {
   isOpen: boolean;
@@ -41,10 +41,39 @@ export function AddWordModal({
   const [collection, setCollection] = useState('IELTS Academic');
 
   const [isEnriching, setIsEnriching] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasEnriched, setHasEnriched] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState('');
+
+  // Client-side instant translation fallback
+  const handleClientTranslate = async () => {
+    const clean = lemma.trim();
+    if (!clean) return;
+    setIsTranslating(true);
+    try {
+      const res = await fetch(`https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=uz&q=${encodeURIComponent(clean)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data[0] && typeof data[0] === 'string') {
+          setTranslationUz(data[0].trim());
+          setIsTranslating(false);
+          return;
+        }
+      }
+      const memRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|uz`);
+      if (memRes.ok) {
+        const memData = await memRes.json();
+        const memText = memData?.responseData?.translatedText;
+        if (memText && !memText.includes('MYMEMORY')) {
+          setTranslationUz(memText.replace(/<[^>]*>/g, '').trim());
+        }
+      }
+    } catch {} finally {
+      setIsTranslating(false);
+    }
+  };
 
   // Handle word enrichment via API
   const enrichWord = useCallback(async (wordToEnrich: string) => {
@@ -69,7 +98,21 @@ export function AddWordModal({
         setCefrLevel(data.cefrLevel || 'C1');
         setIeltsBand(data.ieltsBand || 7.5);
         setDefinitionEn(data.definitionEn || '');
-        setTranslationUz(data.translationUz || '');
+        let finalUz = data.translationUz || '';
+        if (!finalUz || finalUz.includes('(ot') || finalUz.includes('(fe\'l') || finalUz.includes('(sifat') || finalUz.includes('(ravish')) {
+          try {
+            const clientRes = await fetch(
+              `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=uz&q=${encodeURIComponent(clean)}`
+            );
+            if (clientRes.ok) {
+              const clientData = await clientRes.json();
+              if (Array.isArray(clientData) && clientData[0] && typeof clientData[0] === 'string') {
+                finalUz = clientData[0].trim();
+              }
+            }
+          } catch {}
+        }
+        setTranslationUz(finalUz);
         setUzbekContextNotes(data.uzbekContextNotes || '');
         setPronunciationIpa(data.phoneticIpa || `/${clean}/`);
         setAudioUrl(data.audioUrl || undefined);
@@ -251,9 +294,20 @@ export function AddWordModal({
 
             {/* Uzbek Translation (Quick Edit) */}
             <div>
-              <label className="block text-xs font-semibold text-[#315C4A] uppercase tracking-wider mb-1">
-                🇺🇿 O'zbekcha ma'nosi &amp; tarjimasi
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-[#315C4A] uppercase tracking-wider">
+                  🇺🇿 O&apos;zbekcha ma&apos;nosi &amp; tarjimasi <span className="text-[#315C4A]">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleClientTranslate}
+                  disabled={isTranslating || !lemma.trim()}
+                  className="text-[11px] font-medium text-[#315C4A] hover:text-[#18231F] flex items-center gap-1 transition disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw size={12} className={isTranslating ? 'animate-spin' : ''} />
+                  <span>{isTranslating ? 'Tarjima qilinmoqda...' : 'Qayta tarjima'}</span>
+                </button>
+              </div>
               <input
                 type="text"
                 value={translationUz}

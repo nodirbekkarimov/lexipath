@@ -62,24 +62,43 @@ export async function updateSession(request: NextRequest) {
 
   // Protect admin operations strictly
   if (pathname.startsWith('/admin')) {
+    // Dedicated secret admin login gateway
+    if (pathname === '/admin/login') {
+      if (localSession) {
+        try {
+          const parsed = JSON.parse(localSession);
+          if (parsed.role === 'super_admin' || parsed.role === 'admin') {
+            const url = request.nextUrl.clone();
+            url.pathname = '/admin';
+            return NextResponse.redirect(url);
+          }
+        } catch {}
+      }
+      return supabaseResponse;
+    }
+
+    // All other /admin routes require super_admin or admin role
     if (!isAuthenticated) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.searchParams.set('redirectTo', pathname)
-      return NextResponse.redirect(url)
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/login';
+      return NextResponse.redirect(url);
     }
 
     // Verify admin role if session exists
     if (localSession) {
       try {
-        const parsed = JSON.parse(localSession)
+        const parsed = JSON.parse(localSession);
         if (parsed.role !== 'super_admin' && parsed.role !== 'admin') {
-          const url = request.nextUrl.clone()
-          url.pathname = '/login'
-          url.searchParams.set('error', 'admin_access_required')
-          return NextResponse.redirect(url)
+          const url = request.nextUrl.clone();
+          url.pathname = '/admin/login';
+          url.searchParams.set('error', 'unauthorized');
+          return NextResponse.redirect(url);
         }
-      } catch {}
+      } catch {
+        const url = request.nextUrl.clone();
+        url.pathname = '/admin/login';
+        return NextResponse.redirect(url);
+      }
     }
   }
 

@@ -20,25 +20,22 @@ export default function RegisterPage() {
   }
 
   if (result?.success) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/dashboard';
+    }
     return (
       <div className="w-full max-w-md">
         <div className="bg-white border border-[#18231F]/10 rounded-2xl shadow-sm px-8 py-12 text-center">
           <div className="w-14 h-14 rounded-full bg-[#DCE9DF] flex items-center justify-center mx-auto mb-5">
             <CheckCircle className="text-[#315C4A]" size={28} />
           </div>
-          <h2 className="text-xl font-bold text-[#18231F] mb-2">Check your email</h2>
+          <h2 className="text-xl font-bold text-[#18231F] mb-2">Akkaunt yaratildi!</h2>
           <p className="text-sm text-[#18231F]/55 leading-relaxed">
-            We sent a confirmation link to your email address. Click it to activate your account and start learning.
+            Platformaga muvaffaqiyatli kirdingiz. Dashboard ochilmoqda...
           </p>
-          <Link
-            href="/login"
-            className="inline-block mt-8 px-6 py-2.5 bg-[#315C4A] text-white text-sm font-semibold rounded-lg hover:bg-[#18231F] transition-colors"
-          >
-            Back to sign in
-          </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -46,10 +43,10 @@ export default function RegisterPage() {
       <div className="bg-white border border-[#18231F]/10 rounded-2xl shadow-sm px-8 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#18231F] tracking-tight mb-1.5">
-            Create your account
+            Akkaunt yaratish
           </h1>
           <p className="text-sm text-[#18231F]/50">
-            Join thousands of IELTS learners building their vocabulary
+            IELTS va akademik so&apos;z boyligingizni oshirish uchun ro&apos;yxatdan o&apos;ting
           </p>
         </div>
 
@@ -63,7 +60,7 @@ export default function RegisterPage() {
           {/* Full name */}
           <div>
             <label htmlFor="fullName" className="block text-xs font-semibold text-[#18231F]/60 uppercase tracking-wider mb-1.5">
-              Full name
+              To&apos;liq ism-familiyangiz
             </label>
             <input
               id="fullName"
@@ -71,7 +68,7 @@ export default function RegisterPage() {
               type="text"
               autoComplete="name"
               required
-              placeholder="Your name"
+              placeholder="Ismingizni kiriting"
               className="w-full px-3.5 py-2.5 text-sm text-[#18231F] bg-[#F7F6F0] border border-[#18231F]/15 rounded-lg placeholder-[#18231F]/30 focus:outline-none focus:ring-2 focus:ring-[#315C4A]/30 focus:border-[#315C4A] transition-colors"
             />
             {result?.fieldErrors?.fullName && (
@@ -82,7 +79,7 @@ export default function RegisterPage() {
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-xs font-semibold text-[#18231F]/60 uppercase tracking-wider mb-1.5">
-              Email
+              Email manzilingiz
             </label>
             <input
               id="email"
@@ -90,7 +87,7 @@ export default function RegisterPage() {
               type="email"
               autoComplete="email"
               required
-              placeholder="you@example.com"
+              placeholder="siz@example.com"
               className="w-full px-3.5 py-2.5 text-sm text-[#18231F] bg-[#F7F6F0] border border-[#18231F]/15 rounded-lg placeholder-[#18231F]/30 focus:outline-none focus:ring-2 focus:ring-[#315C4A]/30 focus:border-[#315C4A] transition-colors"
             />
             {result?.fieldErrors?.email && (
@@ -101,7 +98,7 @@ export default function RegisterPage() {
           {/* Password */}
           <div>
             <label htmlFor="password" className="block text-xs font-semibold text-[#18231F]/60 uppercase tracking-wider mb-1.5">
-              Password
+              Parol
             </label>
             <div className="relative">
               <input
@@ -111,7 +108,7 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 required
                 minLength={8}
-                placeholder="At least 8 characters"
+                placeholder="Kamida 8 ta belgi"
                 className="w-full px-3.5 py-2.5 pr-10 text-sm text-[#18231F] bg-[#F7F6F0] border border-[#18231F]/15 rounded-lg placeholder-[#18231F]/30 focus:outline-none focus:ring-2 focus:ring-[#315C4A]/30 focus:border-[#315C4A] transition-colors"
               />
               <button
@@ -130,25 +127,25 @@ export default function RegisterPage() {
 
           {/* Terms notice */}
           <p className="text-xs text-[#18231F]/40 leading-relaxed">
-            By creating an account you agree to our terms of service and privacy policy.
+            Ro&apos;yxatdan o&apos;tish orqali siz platformadan foydalanish qoidalariga rozilik bildirasiz.
           </p>
 
           {/* Submit */}
           <button
             type="submit"
             disabled={isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#315C4A] hover:bg-[#18231F] text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#315C4A] hover:bg-[#18231F] text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             {isPending && <Loader2 size={15} className="animate-spin" />}
-            {isPending ? 'Creating account…' : 'Create account'}
+            {isPending ? 'Akkaunt ochilmoqda…' : 'Ro\'yxatdan o\'tish'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-[#18231F]/55">
-            Already have an account?{' '}
+            Hisobingiz bormi?{' '}
             <Link href="/login" className="text-[#315C4A] font-semibold hover:text-[#18231F] transition-colors">
-              Sign in
+              Kirish
             </Link>
           </p>
         </div>
