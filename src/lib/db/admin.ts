@@ -54,7 +54,7 @@ export async function writeAuditLog(data: {
 }): Promise<void> {
   const supabase = await createAdminClient()
 
-  await supabase.from('audit_logs').insert({
+  await (supabase.from('audit_logs') as any).insert({
     actor_id: data.actorId,
     action: data.action,
     target_type: data.targetType ?? null,

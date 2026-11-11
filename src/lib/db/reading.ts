@@ -66,7 +66,7 @@ export async function upsertReadingAttempt(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Not authenticated' }
 
-  const { error } = await supabase.from('reading_attempts').insert({
+  const { error } = await (supabase.from('reading_attempts') as any).insert({
     user_id: user.id,
     passage_id: passageId,
     ...data,

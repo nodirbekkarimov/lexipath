@@ -20,8 +20,8 @@ export async function getTodayStudySession() {
   if (existing) return existing
 
   // Create today's session
-  const { data: created } = await supabase
-    .from('study_sessions')
+  const { data: created } = await (supabase
+    .from('study_sessions') as any)
     .insert({ user_id: user.id, session_date: today })
     .select()
     .single()
@@ -57,7 +57,7 @@ export async function incrementStudySession(
     .single()
 
   if (!session) {
-    await supabase.from('study_sessions').insert({
+    await (supabase.from('study_sessions') as any).insert({
       user_id: user.id,
       session_date: today,
       ...updates,
