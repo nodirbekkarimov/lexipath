@@ -6,9 +6,11 @@ import { ShieldCheck, Lock, Mail, ArrowLeft, KeyRound, AlertCircle, Eye, EyeOff 
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('nodir.karimov@lexipath.uz');
-  const [secretKey, setSecretKey] = useState('');
-  const [showSecret, setShowSecret] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [setupSecret, setSetupSecret] = useState('');
+  const [showSetupSecret, setShowSetupSecret] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,7 +21,10 @@ export default function AdminLoginPage() {
 
     const formData = new FormData();
     formData.append('email', email);
-    formData.append('secretKey', secretKey);
+    formData.append('password', password);
+    if (setupSecret.trim()) {
+      formData.append('setupSecret', setupSecret.trim());
+    }
 
     try {
       const res = await adminLoginAction(formData);
@@ -64,7 +69,7 @@ export default function AdminLoginPage() {
               LexiPath Admin Portali
             </h1>
             <p className="text-xs text-[#DCE9DF]/60 mt-1.5 font-sans">
-              Faqat vakolatli ma&apos;mur (Nodir Karimov) uchun maxfiy kirish shlyuzi
+              Faqat vakolatli boshqaruvchi uchun maxfiy kirish shlyuzi
             </p>
           </div>
 
@@ -89,7 +94,7 @@ export default function AdminLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="nodir.karimov@lexipath.uz"
+                  placeholder="admin@lexipath.uz"
                   className="w-full pl-10 pr-4 py-2.5 bg-[#111816]/70 border border-[#315C4A]/40 rounded-xl text-sm text-white placeholder-[#DCE9DF]/30 focus:outline-none focus:border-[#F3C969] focus:ring-1 focus:ring-[#F3C969] transition"
                 />
               </div>
@@ -97,26 +102,55 @@ export default function AdminLoginPage() {
 
             <div>
               <label className="block text-xs font-semibold text-[#DCE9DF]/80 mb-2">
-                Maxfiy Boshqaruv Kaliti (Secret Key)
+                Parol
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#DCE9DF]/40" size={16} />
                 <input
-                  type={showSecret ? 'text' : 'password'}
-                  value={secretKey}
-                  onChange={(e) => setSecretKey(e.target.value)}
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••••••"
                   className="w-full pl-10 pr-11 py-2.5 bg-[#111816]/70 border border-[#315C4A]/40 rounded-xl text-sm text-white placeholder-[#DCE9DF]/30 focus:outline-none focus:border-[#F3C969] focus:ring-1 focus:ring-[#F3C969] transition font-mono"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowSecret(!showSecret)}
+                  onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#DCE9DF]/40 hover:text-white transition"
                 >
-                  {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+            </div>
+
+            {/* Optional Setup Secret Bootstrap disclosure */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowSetupSecret(!showSetupSecret)}
+                className="text-xs text-[#F3C969]/80 hover:text-[#F3C969] underline cursor-pointer flex items-center gap-1"
+              >
+                <span>{showSetupSecret ? '▲ Maxfiy sozlash kalitini yashirish' : '▼ Dastlabki admin sozlash kaliti (Setup Secret)?'}</span>
+              </button>
+
+              {showSetupSecret && (
+                <div className="mt-2.5 p-3.5 bg-[#111816]/90 border border-[#F3C969]/30 rounded-xl space-y-1.5 animate-fadeIn">
+                  <label className="block text-[11px] font-semibold text-[#F3C969]">
+                    ADMIN_SETUP_SECRET Kaliti
+                  </label>
+                  <input
+                    type="password"
+                    value={setupSecret}
+                    onChange={(e) => setSetupSecret(e.target.value)}
+                    placeholder="Render environment'dagi ADMIN_SETUP_SECRET"
+                    className="w-full px-3 py-2 bg-[#18231F] border border-[#F3C969]/40 rounded-lg text-xs text-white placeholder-[#DCE9DF]/30 focus:outline-none focus:border-[#F3C969] font-mono"
+                  />
+                  <p className="text-[10px] text-[#DCE9DF]/50">
+                    Ushbu kalit kiritilsa, tizim emailingizni avtomatik tasdiqlab, eng yuqori Super Admin maqomini biriktiradi.
+                  </p>
+                </div>
+              )}
             </div>
 
             <button

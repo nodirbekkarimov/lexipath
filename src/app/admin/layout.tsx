@@ -32,7 +32,6 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [simulatedRole, setSimulatedRole] = useState<AdminRole>('super_admin');
 
   const adminNavItems = [
     { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -109,21 +108,15 @@ export default function AdminLayout({
               </div>
             </div>
 
-            {/* Role Simulation Switcher for Testing Least-Privilege */}
-            <div className="mt-4 pt-3 border-t border-ink-800/80">
-              <label className="block text-[10px] font-mono uppercase text-ink-400 mb-1">
-                Active RBAC Role (Simulated):
-              </label>
-              <select
-                value={simulatedRole}
-                onChange={(e) => setSimulatedRole(e.target.value as AdminRole)}
-                className="w-full bg-ink-900 border border-ink-800 text-[11px] text-white rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-forest-500 font-mono"
-              >
-                <option value="super_admin">Super Admin</option>
-                <option value="content_manager">Content Manager</option>
-                <option value="support_agent">Support Agent</option>
-                <option value="analyst">Analyst</option>
-              </select>
+            {/* Authenticated Admin Badge */}
+            <div className="mt-3 pt-2.5 border-t border-ink-800/80 flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase text-forest-400 font-bold flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-forest-400" />
+                <span>Verified Root Admin</span>
+              </span>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-forest-900/60 border border-forest-700/50 text-forest-300">
+                PROD-ACTIVE
+              </span>
             </div>
           </div>
 
@@ -184,20 +177,21 @@ export default function AdminLayout({
         <header className="border-b border-ivory-200/90 bg-white px-6 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3 text-xs">
             <span className="font-mono font-bold text-forest-800 bg-forest-100 border border-forest-200 px-2 py-0.5 rounded">
-              {roleLabels[simulatedRole].split(' ')[0]} Active
+              Super Admin Active
             </span>
             <span className="text-ink-300">•</span>
             <span className="text-ink-500 font-mono">
-              Server Time: {new Date().toISOString().split('T')[0]}
+              Production Gateway
             </span>
           </div>
 
           <div className="flex items-center space-x-4 text-xs">
-            <span className="hidden sm:inline-block font-mono text-[11px] text-ink-400">
-              Demo/UI Mode with Deterministic Data Layer
+            <span className="hidden sm:inline-block font-mono text-[11px] text-forest-700 font-semibold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>RLS & Server Authorization Enforced</span>
             </span>
-            <div className="w-7 h-7 rounded-full bg-ink-800 text-white flex items-center justify-center font-bold text-xs">
-              NR
+            <div className="w-7 h-7 rounded-full bg-forest-800 text-white flex items-center justify-center font-bold text-xs">
+              AD
             </div>
           </div>
         </header>

@@ -1,6 +1,7 @@
 /**
- * SuperMemo SM-2 Spaced Repetition Algorithm
- * Computes optimal memory review intervals based on learner recall performance.
+ * SuperMemo SM-2 Spaced Repetition Algorithm (Enhanced Production Implementation)
+ * Computes optimal memory review intervals based on learner recall performance,
+ * with strict Tashkent timezone handling and mastery transitions.
  */
 
 export type SRSRating = 0 | 1 | 2 | 3 | 4 | 5; 
@@ -19,13 +20,45 @@ export interface SRSState {
 
 export interface SRSResult extends SRSState {
   dueDate: string; // ISO date string (YYYY-MM-DD)
+  status: 'new' | 'learning' | 'reviewing' | 'mastered';
 }
 
+/**
+ * Get current date string in Tashkent (or specified) timezone formatted as YYYY-MM-DD.
+ * Prevents UTC midnight boundary displacement.
+ */
+export function getLocalISODate(timezone = 'Asia/Tashkent', offsetDays = 0): string {
+  const targetDate = new Date();
+  if (offsetDays !== 0) {
+    targetDate.setDate(targetDate.getDate() + offsetDays);
+  }
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(targetDate);
+  } catch {
+    // Fallback if timezone not recognized
+    return targetDate.toISOString().split('T')[0];
+  }
+}
+
+/**
+ * Calculates next SM-2 interval, ease factor, repetition count, and target due date.
+ */
 export function calculateSM2(
   current: SRSState,
-  rating: SRSRating
+  rating: SRSRating,
+  timezone = 'Asia/Tashkent'
 ): SRSResult {
   let { repetitions, intervalDays, easeFactor } = current;
+
+  // Validate and clamp incoming values to safe ranges
+  repetitions = Math.max(0, repetitions || 0);
+  intervalDays = Math.max(1, intervalDays || 1);
+  easeFactor = Math.max(1.3, easeFactor || 2.5);
 
   if (rating < 3) {
     // Failed recall: reset repetitions to zero and review tomorrow
@@ -46,17 +79,28 @@ export function calculateSM2(
   // Update ease factor: EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
   const delta = 0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02);
   easeFactor = Math.max(1.3, easeFactor + delta);
-  // Round to 2 decimal places for clean persistence
+  // Round to 2 decimal places for clean storage
   easeFactor = Math.round(easeFactor * 100) / 100;
 
-  const nextDate = new Date();
-  nextDate.setDate(nextDate.getDate() + intervalDays);
+  // Calculate due date in Tashkent timezone
+  const dueDate = getLocalISODate(timezone, intervalDays);
+
+  // Determine mastery status
+  let status: 'new' | 'learning' | 'reviewing' | 'mastered' = 'learning';
+  if (repetitions >= 5 || intervalDays >= 21) {
+    status = 'mastered';
+  } else if (repetitions >= 2 || intervalDays >= 6) {
+    status = 'reviewing';
+  } else {
+    status = 'learning';
+  }
 
   return {
     repetitions,
     intervalDays,
     easeFactor,
-    dueDate: nextDate.toISOString().split('T')[0],
+    dueDate,
+    status,
   };
 }
 

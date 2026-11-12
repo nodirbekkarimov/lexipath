@@ -107,8 +107,8 @@ export function LearnerNav() {
 
           {/* Desktop Right Status: Streak & Profile */}
           <div className="hidden sm:flex items-center space-x-3">
-            {/* Admin Panel Button if super_admin or admin */}
-            {(learner.role === 'super_admin' || learner.role === 'admin' || learner.email?.includes('nodir')) && (
+            {/* Admin Panel Button strictly for verified super_admin or admin roles */}
+            {(learner.role === 'super_admin' || learner.role === 'admin') && (
               <Link
                 href="/admin"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#315C4A] hover:bg-[#18231F] text-white font-bold text-xs shadow-xs transition"
@@ -131,7 +131,7 @@ export function LearnerNav() {
             </div>
 
             {/* User Profile Mini or Login / Register */}
-            {learner.email === 'learner@lexipath.uz' ? (
+            {(!learner.email || learner.email === 'learner@lexipath.uz' || learner.id === 'guest') ? (
               <div className="flex items-center gap-2 pl-2 border-l border-ivory-200">
                 <Link
                   href="/login"
@@ -152,7 +152,7 @@ export function LearnerNav() {
                 className="flex items-center space-x-2 pl-2 border-l border-ivory-200 hover:opacity-85 transition"
               >
                 <div className="w-7 h-7 rounded-full bg-forest-100 text-forest-800 border border-forest-200 flex items-center justify-center text-xs font-semibold">
-                  {learner.fullName.slice(0, 2).toUpperCase()}
+                  {(learner.fullName || 'FO').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="hidden md:flex flex-col text-left">
                   <span className="text-xs font-semibold text-ink-900 leading-tight">

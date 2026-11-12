@@ -97,9 +97,11 @@ export default function ProgressAnalyticsPage() {
             <Badge variant="outline" size="sm">Exercises</Badge>
           </div>
           <div className="font-serif text-4xl font-bold text-ink-950">
-            {accuracyRate}%
+            {stats.totalQuizzesTaken > 0 ? `${accuracyRate}%` : '—'}
           </div>
-          <p className="text-xs text-ink-500">{stats.totalQuizzesTaken} exercises completed</p>
+          <p className="text-xs text-ink-500">
+            {stats.totalQuizzesTaken > 0 ? `${stats.totalQuizzesTaken} ta mashq bajarilgan` : 'Hali mashq bajarilmagan'}
+          </p>
         </Card>
 
         <Card className="p-5 bg-white border-ivory-200 shadow-subtle space-y-2">

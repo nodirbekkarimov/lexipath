@@ -69,42 +69,79 @@ export function WordInspectorPanel({
     let isCancelled = false;
     setLoading(true);
 
-    fetch('/api/ai/enrich-word', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ word: selectedWord, context: contextSentence }),
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (!isCancelled && res.data) {
-          setEnrichedData({
-            cefrLevel: res.data.cefrLevel || 'C1',
-            ieltsBand: res.data.ieltsBand || 7.5,
-            partOfSpeech: res.data.partOfSpeech || 'noun',
-            phoneticIpa: res.data.phoneticIpa || `/${selectedWord}/`,
-            audioUrl: res.data.audioUrl,
-            translationUz: res.data.translationUz || `${selectedWord} ma'nosi`,
-            definitionEn: res.data.definitionEn || '',
-            collocations: res.data.collocations || [],
-          });
+    const resolveWordData = async () => {
+      try {
+        const res = await fetch('/api/ai/enrich-word', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word: selectedWord, context: contextSentence }),
+        });
+        const resData = await res.json();
+        
+        let trans = resData?.data?.translationUz || '';
+        if (!trans || trans.includes('ma\'nosi')) {
+          try {
+            const trRes = await fetch('/api/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ word: selectedWord }),
+            });
+            if (trRes.ok) {
+              const trJson = await trRes.json();
+              if (trJson.translation) {
+                trans = trJson.translation;
+              }
+            }
+          } catch {}
         }
-      })
-      .catch(() => {
-        // Fallback
+
         if (!isCancelled) {
           setEnrichedData({
-            cefrLevel: 'C1',
-            ieltsBand: 7.5,
-            partOfSpeech: 'noun',
-            phoneticIpa: `/${selectedWord}/`,
-            translationUz: `${selectedWord} ma'nosi`,
-            definitionEn: `Academic vocabulary term in context.`,
+            cefrLevel: resData?.data?.cefrLevel || 'C1',
+            ieltsBand: resData?.data?.ieltsBand || 7.5,
+            partOfSpeech: resData?.data?.partOfSpeech || 'noun',
+            phoneticIpa: resData?.data?.phoneticIpa || `/${selectedWord}/`,
+            audioUrl: resData?.data?.audioUrl,
+            translationUz: trans || `${selectedWord} tarjimasi`,
+            definitionEn: resData?.data?.definitionEn || '',
+            collocations: resData?.data?.collocations || [],
           });
         }
-      })
-      .finally(() => {
+      } catch (err) {
+        if (!isCancelled) {
+          // Direct fallback to translation API
+          try {
+            const trRes = await fetch('/api/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ word: selectedWord }),
+            });
+            const trJson = await trRes.json();
+            setEnrichedData({
+              cefrLevel: 'C1',
+              ieltsBand: 7.5,
+              partOfSpeech: 'noun',
+              phoneticIpa: `/${selectedWord}/`,
+              translationUz: trJson.translation || `${selectedWord} tarjimasi`,
+              definitionEn: `Academic vocabulary term in context.`,
+            });
+          } catch {
+            setEnrichedData({
+              cefrLevel: 'C1',
+              ieltsBand: 7.5,
+              partOfSpeech: 'noun',
+              phoneticIpa: `/${selectedWord}/`,
+              translationUz: `${selectedWord} tarjimasi`,
+              definitionEn: `Academic vocabulary term in context.`,
+            });
+          }
+        }
+      } finally {
         if (!isCancelled) setLoading(false);
-      });
+      }
+    };
+
+    resolveWordData();
 
     return () => {
       isCancelled = true;
@@ -144,7 +181,7 @@ export function WordInspectorPanel({
   };
 
   return (
-    <div className="sticky top-20 bg-white border border-[#315C4A]/25 rounded-2xl p-5 shadow-lg animate-in slide-in-from-right-4 duration-200 space-y-4">
+    <div className="fixed inset-x-3 bottom-3 z-50 lg:static lg:top-20 bg-white border border-[#315C4A]/25 rounded-2xl p-5 shadow-2xl lg:shadow-lg max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-4 lg:slide-in-from-right-4 duration-200 space-y-4">
       {/* Top Header */}
       <div className="flex items-center justify-between border-b border-[#18231F]/8 pb-3">
         <div className="flex items-center space-x-1.5 text-[#315C4A]">

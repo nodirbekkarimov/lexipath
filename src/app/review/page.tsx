@@ -31,6 +31,7 @@ export default function ReviewQueuePage() {
     reviewedCount,
     lastFeedback,
     restartSession,
+    sessionSummary,
   } = useReview();
 
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -91,8 +92,12 @@ export default function ReviewQueuePage() {
   }
 
   if (isSessionFinished) {
+    const minutes = Math.floor(sessionSummary.elapsedSeconds / 60);
+    const seconds = sessionSummary.elapsedSeconds % 60;
+    const timeFormatted = minutes > 0 ? `${minutes} daq ${seconds} son` : `${seconds} soniya`;
+
     return (
-      <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-6">
+      <div className="max-w-xl mx-auto px-4 py-12 text-center space-y-6">
         <div className="w-16 h-16 bg-forest-50 border border-forest-200 text-forest-700 rounded-2xl flex items-center justify-center mx-auto shadow-subtle">
           <Award className="w-8 h-8" />
         </div>
@@ -101,8 +106,25 @@ export default function ReviewQueuePage() {
           Takrorlash muvaffaqiyatli yakunlandi!
         </h2>
         <p className="text-sm text-ink-600 max-w-md mx-auto leading-relaxed">
-          Siz <strong className="text-forest-800">{reviewedCount} ta akademik so&apos;z</strong>ni SM-2 algoritmi orqali qayta takrorladingiz. Xotirada saqlash samaradorligi oshirildi.
+          Siz <strong className="text-forest-800">{sessionSummary.totalReviewed} ta akademik so&apos;z</strong>ni ko&apos;rib chiqdingiz va xotirada saqlash oraliqlarini yangiladingiz.
         </p>
+
+        {/* Real Session Analytics Card */}
+        <div className="grid grid-cols-3 gap-3 max-w-md mx-auto bg-white p-4 rounded-xl border border-ivory-200 shadow-subtle text-left">
+          <div className="p-3 bg-ivory-50 rounded-lg">
+            <span className="text-[10px] uppercase font-mono text-ink-400 block">Aniqlik</span>
+            <span className="font-serif text-xl font-bold text-forest-800">{sessionSummary.accuracyRate}%</span>
+          </div>
+          <div className="p-3 bg-ivory-50 rounded-lg">
+            <span className="text-[10px] uppercase font-mono text-ink-400 block">Haqiqiy Vaqt</span>
+            <span className="font-serif text-base font-bold text-ink-900">{timeFormatted}</span>
+          </div>
+          <div className="p-3 bg-ivory-50 rounded-lg">
+            <span className="text-[10px] uppercase font-mono text-ink-400 block">Oson/Yaxshi</span>
+            <span className="font-serif text-xl font-bold text-emerald-700">{sessionSummary.goodCount + sessionSummary.easyCount} ta</span>
+          </div>
+        </div>
+
         <div className="pt-2 flex justify-center space-x-3">
           <Button variant="outline" onClick={restartSession}>
             <RotateCcw className="w-4 h-4 mr-2" />

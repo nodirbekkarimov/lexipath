@@ -128,13 +128,31 @@ export interface LexiPathContextType {
   resetAllData: () => void;
 }
 
+import { createClient } from '@/lib/supabase/client';
+
+export const GUEST_LEARNER: Profile = {
+  id: 'guest',
+  email: '',
+  fullName: 'Mehmon Foydalanuvchi',
+  role: 'learner',
+  targetBand: 7.5,
+  dailyGoalWords: 10,
+  wordsLearnedToday: 0,
+  wordsLearnedCount: 0,
+  totalStudyMinutes: 0,
+  nativeLanguage: 'uz',
+  streakDays: 0,
+  createdAt: new Date().toISOString(),
+  status: 'active',
+};
+
 const LexiPathContext = createContext<LexiPathContextType | null>(null);
 
 export function LexiPathProvider({ children }: { children: React.ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Core State initialized with SEED data
-  const [learner, setLearner] = useState<Profile>(SEED_LEARNER);
+  // Core State initialized cleanly with Guest user (never hardcoded admin)
+  const [learner, setLearner] = useState<Profile>(GUEST_LEARNER);
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>(SEED_VOCABULARY.map(normalizeVocab));
   const [userVocabulary, setUserVocabulary] = useState<UserVocabularyItem[]>(SEED_USER_VOCABULARY.map(normalizeUserVocab));
   const [collections, setCollections] = useState<VocabularyCollection[]>(SEED_COLLECTIONS);
@@ -148,62 +166,118 @@ export function LexiPathProvider({ children }: { children: React.ReactNode }) {
   const [readPassageIds, setReadPassageIds] = useState<string[]>(['pass-1']);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
 
-  // Hydrate from localStorage once on client mount
+  // Authenticate and Hydrate on client mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.learner) setLearner(parsed.learner);
-        if (parsed.vocabulary) setVocabulary((parsed.vocabulary as any[]).map(normalizeVocab));
-        if (parsed.userVocabulary) setUserVocabulary((parsed.userVocabulary as any[]).map(normalizeUserVocab));
-        if (parsed.collections) setCollections(parsed.collections);
-        if (parsed.passages) setPassages((parsed.passages as any[]).map(normalizePassage));
-        if (parsed.quizQuestions) setQuizQuestions(parsed.quizQuestions);
-        if (parsed.adminUsers) setAdminUsers(parsed.adminUsers);
-        if (parsed.aiLogs) setAiLogs(parsed.aiLogs);
-        if (parsed.auditLogs) setAuditLogs(parsed.auditLogs);
-        if (parsed.feedbackTickets) setFeedbackTickets(parsed.feedbackTickets);
-        if (parsed.systemSettings) setSystemSettings(parsed.systemSettings);
-        if (parsed.readPassageIds) setReadPassageIds(parsed.readPassageIds);
-        if (parsed.quizAttempts) setQuizAttempts(parsed.quizAttempts);
-      }
+    const supabase = createClient();
 
-      // Check active session cookie from login/register
-      if (typeof document !== 'undefined') {
-        const match = document.cookie.match(/lexipath_session=([^;]+)/);
-        if (match) {
+    async function initUserAndStore() {
+      try {
+        // 1. Check local storage cache for non-sensitive UI content
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
           try {
-            const session = JSON.parse(decodeURIComponent(match[1]));
-            if (session?.fullName) {
-              setLearner((prev) => ({
-                ...prev,
-                fullName: session.fullName,
-                email: session.email || prev.email,
-                role: session.role || 'learner',
-              }));
+            const parsed = JSON.parse(stored);
+            if (parsed.vocabulary) setVocabulary((parsed.vocabulary as any[]).map(normalizeVocab));
+            if (parsed.userVocabulary) setUserVocabulary((parsed.userVocabulary as any[]).map(normalizeUserVocab));
+            if (parsed.collections) setCollections(parsed.collections);
+            if (parsed.passages) setPassages((parsed.passages as any[]).map(normalizePassage));
+            if (parsed.quizQuestions) setQuizQuestions(parsed.quizQuestions);
+            if (parsed.readPassageIds) setReadPassageIds(parsed.readPassageIds);
+            if (parsed.quizAttempts) setQuizAttempts(parsed.quizAttempts);
+          } catch {}
+        }
+
+        // 2. Query Supabase for authentic active session
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // Fetch real profile from Supabase profiles table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          // Check if user has an assigned admin role
+          const { data: roleRows } = await supabase
+            .from('user_admin_roles')
+            .select('admin_roles(name)')
+            .eq('user_id', user.id);
+
+          const assignedRole = (roleRows?.[0] as any)?.admin_roles?.name || profile?.role || 'learner';
+
+          const activeLearner: Profile = {
+            id: user.id,
+            email: user.email || '',
+            fullName: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Foydalanuvchi',
+            role: assignedRole,
+            targetBand: profile?.target_band ?? 7.5,
+            targetExamDate: profile?.target_exam_date || undefined,
+            dailyGoalWords: profile?.daily_goal_words ?? 10,
+            wordsLearnedToday: profile?.words_learned_today ?? 0,
+            wordsLearnedCount: profile?.words_learned_count ?? 0,
+            totalStudyMinutes: profile?.total_study_minutes ?? 0,
+            nativeLanguage: profile?.native_language || 'uz',
+            streakDays: profile?.streak_days ?? 0,
+            createdAt: user.created_at,
+            lastActiveAt: new Date().toISOString(),
+            status: profile?.status || 'active',
+          };
+
+          setLearner(activeLearner);
+
+          // Fetch user-specific vocabulary from Supabase if table populated
+          const { data: userVocabRows } = await supabase
+            .from('user_vocabulary')
+            .select('*, vocabulary_items(*)')
+            .eq('user_id', user.id);
+
+          if (userVocabRows && userVocabRows.length > 0) {
+            const mappedVocab: UserVocabularyItem[] = userVocabRows.map((r: any) => ({
+              id: r.id,
+              userId: r.user_id,
+              vocabularyItemId: r.vocabulary_item_id,
+              vocabulary: normalizeVocab(r.vocabulary_items || {}),
+              collectionName: r.collection_name || 'My Vocabulary',
+              customContextSentence: r.custom_context_sentence || '',
+              status: r.status || 'learning',
+              srsStage: r.srs_stage ?? 0,
+              intervalDays: r.interval_days ?? 1,
+              easeFactor: r.ease_factor ?? 2.5,
+              dueDate: r.due_date || new Date().toISOString().split('T')[0],
+              createdAt: r.created_at,
+            }));
+            setUserVocabulary(mappedVocab);
+          }
+        } else {
+          // Unauthenticated Guest: ensure clean guest state (wipe any stale "Nodir Karimov" from local cache)
+          setLearner(GUEST_LEARNER);
+          try {
+            const rawStored = localStorage.getItem(STORAGE_KEY);
+            if (rawStored && (rawStored.includes('Nodir Karimov') || rawStored.includes('nodir.karimov@lexipath.uz'))) {
+              localStorage.removeItem(STORAGE_KEY);
             }
           } catch {}
-        } else {
-          // If no active session cookie exists, ensure clean guest state (not admin)
-          setLearner((prev) => {
-            if (prev.role === 'super_admin' || prev.fullName === 'Nodir Karimov') {
-              return {
-                ...SEED_LEARNER,
-                fullName: 'Mehmon Foydalanuvchi',
-                email: 'learner@lexipath.uz',
-                role: 'learner',
-              };
-            }
-            return prev;
-          });
         }
+      } catch (e) {
+        console.warn('Initialization error in LexiPath data provider:', e);
+      } finally {
+        setIsHydrated(true);
       }
-    } catch (e) {
-      console.warn('Failed to hydrate LexiPath local storage:', e);
-    } finally {
-      setIsHydrated(true);
     }
+
+    initUserAndStore();
+
+    // Listen to Supabase auth events (login, logout, token refresh)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        initUserAndStore();
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
   // Sync to localStorage on updates (debounced/effect)
@@ -302,6 +376,39 @@ export function LexiPathProvider({ children }: { children: React.ReactNode }) {
       wordsLearnedCount: prev.wordsLearnedCount + 1,
     }));
 
+    // Asynchronously sync new word to Supabase if authenticated
+    if (learner.id && learner.id !== 'guest') {
+      const supabase = createClient();
+      (async () => {
+        try {
+          await (supabase.from('vocabulary_items') as any).upsert({
+            id: wordItem.id,
+            lemma: wordItem.lemma,
+            phonetic_ipa: wordItem.phoneticIpa,
+            pos: wordItem.pos,
+            definition_en: wordItem.definitionEn,
+            translation_uz: wordItem.translationUz,
+            context_sentence: wordItem.contextSentence,
+            cefr_level: wordItem.cefrLevel,
+            ielts_band: wordItem.ieltsBand,
+            topic: wordItem.topic,
+          });
+
+          await (supabase.from('user_vocabulary') as any).insert({
+            id: newUserVocabItem.id,
+            user_id: learner.id,
+            vocabulary_item_id: wordItem.id,
+            collection_name: newUserVocabItem.collectionName,
+            status: newUserVocabItem.status,
+            srs_stage: newUserVocabItem.srsStage,
+            interval_days: newUserVocabItem.intervalDays,
+            ease_factor: newUserVocabItem.easeFactor,
+            due_date: newUserVocabItem.dueDate,
+          });
+        } catch {}
+      })();
+    }
+
     return wordItem;
   };
 
@@ -388,6 +495,11 @@ export function LexiPathProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       wordsLearnedCount: Math.max(0, prev.wordsLearnedCount - 1),
     }));
+
+    if (learner.id && learner.id !== 'guest') {
+      const supabase = createClient();
+      supabase.from('user_vocabulary').delete().eq('id', userVocabId).then();
+    }
   };
 
   const updateUserWordNote = (userVocabId: string, note: string) => {
@@ -496,6 +608,21 @@ export function LexiPathProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       totalStudyMinutes: prev.totalStudyMinutes + 1,
     }));
+
+    if (learner.id && learner.id !== 'guest') {
+      const supabase = createClient();
+      supabase
+        .from('user_vocabulary')
+        .update({
+          srs_stage: nextState.repetitions,
+          interval_days: nextState.intervalDays,
+          ease_factor: nextState.easeFactor,
+          due_date: nextState.dueDate,
+          last_reviewed_at: new Date().toISOString(),
+        } as any)
+        .eq('id', userVocabId)
+        .then();
+    }
 
     return { intervalDays: nextState.intervalDays, dueDate: nextState.dueDate };
   };

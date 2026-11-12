@@ -47,30 +47,26 @@ export function AddWordModal({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState('');
 
-  // Client-side instant translation fallback
+  // Instant translation via internal robust API route (avoids CORS)
   const handleClientTranslate = async () => {
     const clean = lemma.trim();
     if (!clean) return;
     setIsTranslating(true);
     try {
-      const res = await fetch(`https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=uz&q=${encodeURIComponent(clean)}`);
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: clean }),
+      });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data[0] && typeof data[0] === 'string') {
-          setTranslationUz(data[0].trim());
-          setIsTranslating(false);
-          return;
+        if (data.translation) {
+          setTranslationUz(data.translation.trim());
         }
       }
-      const memRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|uz`);
-      if (memRes.ok) {
-        const memData = await memRes.json();
-        const memText = memData?.responseData?.translatedText;
-        if (memText && !memText.includes('MYMEMORY')) {
-          setTranslationUz(memText.replace(/<[^>]*>/g, '').trim());
-        }
-      }
-    } catch {} finally {
+    } catch (e) {
+      console.warn('Translation failed:', e);
+    } finally {
       setIsTranslating(false);
     }
   };
@@ -98,16 +94,20 @@ export function AddWordModal({
         setCefrLevel(data.cefrLevel || 'C1');
         setIeltsBand(data.ieltsBand || 7.5);
         setDefinitionEn(data.definitionEn || '');
+        
         let finalUz = data.translationUz || '';
+        // If translation is empty or placeholder, query dedicated translation engine
         if (!finalUz || finalUz.includes('(ot') || finalUz.includes('(fe\'l') || finalUz.includes('(sifat') || finalUz.includes('(ravish')) {
           try {
-            const clientRes = await fetch(
-              `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=uz&q=${encodeURIComponent(clean)}`
-            );
-            if (clientRes.ok) {
-              const clientData = await clientRes.json();
-              if (Array.isArray(clientData) && clientData[0] && typeof clientData[0] === 'string') {
-                finalUz = clientData[0].trim();
+            const trRes = await fetch('/api/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ word: clean }),
+            });
+            if (trRes.ok) {
+              const trData = await trRes.json();
+              if (trData.translation) {
+                finalUz = trData.translation.trim();
               }
             }
           } catch {}
